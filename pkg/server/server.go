@@ -1,12 +1,12 @@
 package server
 
 import (
+	"github.com/lukaross368/admissions-webhook/pkg/webhooks"
+
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-
-	"github.com/lukaross368/admissions-webhook/pkg/webhooks"
 
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/admission/v1"
@@ -14,10 +14,8 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// admitv1beta1Func handles a v1 admission
 type admitv1Func func(v1.AdmissionReview) *v1.AdmissionResponse
 
-// admit handler object
 type admitHandler struct {
 	v1 admitv1Func
 }
@@ -41,29 +39,10 @@ func Execute() {
 	}
 }
 
-// function accepts a v1 admit function and returns an admit handler object
-func newDelegateToV1AdmitHandler(f admitv1Func) admitHandler {
-	return admitHandler{
-		v1: f,
-	}
-}
-
 func init() {
-	CmdWebhook.Flags().StringVar(&certFile, "tls-cert-file", "",
-		"File containing the default x509 Certificate for HTTPS. (CA cert, if any, concatenated after server cert).")
-	CmdWebhook.Flags().StringVar(&keyFile, "tls-private-key-file", "",
-		"File containing the default x509 private key matching --tls-cert-file.")
-	CmdWebhook.Flags().IntVar(&port, "port", 443,
-		"Secure port that the webhook listens on")
-}
-
-func serveValidatePods(w http.ResponseWriter, r *http.Request) {
-	serve(w, r, newDelegateToV1AdmitHandler(webhooks.ValidatePods))
-}
-
-// function to serve the mutate pods function.
-func serveMutatePods(w http.ResponseWriter, r *http.Request) {
-	serve(w, r, newDelegateToV1AdmitHandler(webhooks.MutatePods))
+	CmdWebhook.Flags().StringVar(&certFile, "tls-cert-file", "", "File containing the default x509 Certificate for HTTPS. (CA cert, if any, concatenated after server cert).")
+	CmdWebhook.Flags().StringVar(&keyFile, "tls-private-key-file", "", "File containing the default x509 private key matching --tls-cert-file.")
+	CmdWebhook.Flags().IntVar(&port, "port", 443, "Secure port that the webhook listens on")
 }
 
 // generic serve function. contains logic for how to serve object mutation and validation functions.
@@ -127,8 +106,21 @@ func serve(w http.ResponseWriter, r *http.Request, admit admitHandler) {
 	}
 }
 
-func runWebhook(cmd *cobra.Command, args []string) error {
+func newDelegateToV1AdmitHandler(f admitv1Func) admitHandler {
+	return admitHandler{
+		v1: f,
+	}
+}
 
+func serveValidatePods(w http.ResponseWriter, r *http.Request) {
+	serve(w, r, newDelegateToV1AdmitHandler(webhooks.ValidatePods))
+}
+
+func serveMutatePods(w http.ResponseWriter, r *http.Request) {
+	serve(w, r, newDelegateToV1AdmitHandler(webhooks.MutatePods))
+}
+
+func runWebhook(cmd *cobra.Command, args []string) error {
 	config := Config{
 		CertFile: certFile,
 		KeyFile:  keyFile,
