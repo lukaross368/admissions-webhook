@@ -14,66 +14,64 @@ var (
 	codecs = serializer.NewCodecFactory(scheme)
 )
 
-/*
- * This function was originally copied from the Kubernetes project (https://github.com/kubernetes/kubernetes)
- * and is licensed under Apache License 2.0.
- * Modifications have been made by the author of this project.
- */
-func applyPodPatch(ar v1.AdmissionReview, shouldPatchPod func(*corev1.Pod) bool, patch string) *v1.AdmissionResponse {
-	klog.V(2).Info("mutating pods")
+// adapted from Kubernetes (Apache 2.0)
+// decodePodFromAdmissionReview handles common logic for decoding a Pod from an AdmissionReview
+func decodePodFromAdmissionReview(ar v1.AdmissionReview) (*corev1.Pod, *v1.AdmissionResponse) {
 	podResource := metav1.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
 	if ar.Request.Resource != podResource {
 		klog.Errorf("expect resource to be %s", podResource)
-		return nil
+		return nil, nil
 	}
 
 	raw := ar.Request.Object.Raw
-	pod := corev1.Pod{}
+	pod := &corev1.Pod{}
 	deserializer := codecs.UniversalDeserializer()
-	if _, _, err := deserializer.Decode(raw, nil, &pod); err != nil {
+	if _, _, err := deserializer.Decode(raw, nil, pod); err != nil {
 		klog.Error(err)
-		return &v1.AdmissionResponse{
+		return nil, &v1.AdmissionResponse{
 			Result: &metav1.Status{
 				Message: err.Error(),
 			},
 		}
 	}
-	reviewResponse := v1.AdmissionResponse{}
-	reviewResponse.Allowed = true
-	if shouldPatchPod(&pod) {
+
+	return pod, nil
+}
+
+// adapted from Kubernetes (Apache 2.0)
+// applyPodPatch mutates a pod if shouldPatchPod returns true
+func applyPodPatch(ar v1.AdmissionReview, shouldPatchPod func(*corev1.Pod) bool, patch string) *v1.AdmissionResponse {
+	klog.V(2).Info("mutating pods")
+	pod, errResp := decodePodFromAdmissionReview(ar)
+	if errResp != nil {
+		return errResp
+	}
+
+	reviewResponse := &v1.AdmissionResponse{
+		Allowed: true,
+	}
+
+	if shouldPatchPod(pod) {
 		reviewResponse.Patch = []byte(patch)
 		pt := v1.PatchTypeJSONPatch
 		reviewResponse.PatchType = &pt
 	}
-	return &reviewResponse
+
+	return reviewResponse
 }
 
-/*
- * This function was originally copied from the Kubernetes project (https://github.com/kubernetes/kubernetes)
- * and is licensed under Apache License 2.0.
- * Modifications have been made by the author of this project.
- */
+// adapted from Kubernetes (Apache 2.0)
+// applyPodValidation validates a pod and returns an AdmissionResponse
 func applyPodValidation(ar v1.AdmissionReview, validate func(*corev1.Pod) (bool, *metav1.Status)) *v1.AdmissionResponse {
 	klog.V(2).Info("validating pods")
-	podResource := metav1.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
-	if ar.Request.Resource != podResource {
-		klog.Errorf("expect resource to be %s", podResource)
-		return nil
+	pod, errResp := decodePodFromAdmissionReview(ar)
+	if errResp != nil {
+		return errResp
 	}
 
-	raw := ar.Request.Object.Raw
-	pod := corev1.Pod{}
-	deserializer := codecs.UniversalDeserializer()
-	if _, _, err := deserializer.Decode(raw, nil, &pod); err != nil {
-		klog.Error(err)
-		return &v1.AdmissionResponse{
-			Result: &metav1.Status{
-				Message: err.Error(),
-			},
-		}
+	allowed, status := validate(pod)
+	return &v1.AdmissionResponse{
+		Allowed: allowed,
+		Result:  status,
 	}
-
-	reviewResponse := v1.AdmissionResponse{}
-	reviewResponse.Allowed, reviewResponse.Result = validate(&pod)
-	return &reviewResponse
 }
