@@ -133,6 +133,45 @@ func TestMutatePods(t *testing.T) {
 			expectedPatch: "",
 			expectAllowed: true,
 		},
+		{
+			name: "patch pod with no policy",
+			podJSON: `{
+				"metadata":{"name":"test-pod","labels":{"environment":"preprod"}},
+				"spec":{"containers":[{"name":"nginx","image":"nginx:latest"}]}
+			}`,
+			expectedPatch: patchJSON,
+			expectAllowed: true,
+		},
+		{
+			name: "patch pod with no metadata",
+			podJSON: `{
+				"spec": {"containers": [{"name": "nginx","image":"nginx:latest"}],"restartPolicy":"Never"}
+			}`,
+			expectedPatch: "",
+			expectAllowed: true,
+		},
+		{
+			name: "patch pod with no containers",
+			podJSON: `{
+				"metadata":{"name":"test-pod","labels":{"environment":"test"}},
+				"spec":{"restartPolicy":"Never"}
+			}`,
+			expectedPatch: patchJSON,
+			expectAllowed: true,
+		},
+		{
+			name: "patch pod with unexpected owner kind",
+			podJSON: `{
+				"metadata":{
+					"name":"test-pod",
+					"labels":{"environment":"test"},
+					"ownerReferences":[{"apiVersion":"custom/v1","kind":"SomethingElse","name":"example","uid":"abc"}]
+				},
+				"spec":{"containers":[{"name":"nginx","image":"nginx:latest"}],"restartPolicy":"Never"}
+			}`,
+			expectedPatch: patchJSON,
+			expectAllowed: true,
+		},
 	}
 
 	for _, tt := range tests {

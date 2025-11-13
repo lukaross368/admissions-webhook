@@ -14,7 +14,9 @@ import (
 func ValidatePods(ar v1.AdmissionReview) *v1.AdmissionResponse {
 
 	validate := func(pod *corev1.Pod) (bool, *metav1.Status) {
-		responseStatus := metav1.Status{}
+		responseStatus := metav1.Status{
+			Code: http.StatusOK,
+		}
 
 		if len(pod.Spec.Containers) == 0 {
 			return true, &responseStatus
