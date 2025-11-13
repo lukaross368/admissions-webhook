@@ -45,7 +45,11 @@ func init() {
 	CmdWebhook.Flags().IntVar(&port, "port", 443, "Secure port that the webhook listens on")
 }
 
-// generic serve function. contains logic for how to serve object mutation and validation functions.
+/*
+ * This function was originally copied from the Kubernetes project (https://github.com/kubernetes/kubernetes)
+ * and is licensed under Apache License 2.0.
+ * Modifications have been made by the author of this project.
+ */
 func serve(w http.ResponseWriter, r *http.Request, admit admitHandler) {
 	var body []byte
 	if r.Body != nil {
@@ -106,6 +110,10 @@ func serve(w http.ResponseWriter, r *http.Request, admit admitHandler) {
 	}
 }
 
+/*
+ * This function was originally copied from the Kubernetes project (https://github.com/kubernetes/kubernetes)
+ * and is licensed under Apache License 2.0.
+ */
 func newDelegateToV1AdmitHandler(f admitv1Func) admitHandler {
 	return admitHandler{
 		v1: f,

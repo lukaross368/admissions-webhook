@@ -14,6 +14,11 @@ var (
 	codecs = serializer.NewCodecFactory(scheme)
 )
 
+/*
+ * This function was originally copied from the Kubernetes project (https://github.com/kubernetes/kubernetes)
+ * and is licensed under Apache License 2.0.
+ * Modifications have been made by the author of this project.
+ */
 func applyPodPatch(ar v1.AdmissionReview, shouldPatchPod func(*corev1.Pod) bool, patch string) *v1.AdmissionResponse {
 	klog.V(2).Info("mutating pods")
 	podResource := metav1.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
