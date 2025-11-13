@@ -11,8 +11,8 @@ import (
 func MutatePods(ar v1.AdmissionReview) *v1.AdmissionResponse {
 
 	// pod mutation patch
-	const podLabelsPatch = `[
-		{"op":"add","path":"/metadata/labels/automatedLabel","value":"applied-via-mutating-webhook"}
+	const podRestartPolicyPatch = `[
+		 {"op": "replace", "path": "/spec/restartPolicy", "value": "Always"}
 	]`
 
 	// mutation patch condition function
@@ -51,5 +51,5 @@ func MutatePods(ar v1.AdmissionReview) *v1.AdmissionResponse {
 		return false
 	}
 
-	return applyPodPatch(ar, shouldPatchPod, podLabelsPatch)
+	return applyPodPatch(ar, shouldPatchPod, podRestartPolicyPatch)
 }
