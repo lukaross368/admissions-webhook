@@ -1,58 +1,44 @@
 package webhooks
 
 import (
-	"encoding/json"
 	"fmt"
+	"net/http"
+	"strings"
 
 	v1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/klog/v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-type validationResponse struct {
-	Container string `json:"container"`
-	Issue     string `json:"issue"`
-}
 
 // validate pods function. contains logic for how to validate pods
 func ValidatePods(ar v1.AdmissionReview) *v1.AdmissionResponse {
 
-	validate := func(pod *corev1.Pod) (bool, string) {
+	validate := func(pod *corev1.Pod) (bool, *metav1.Status) {
+		responseStatus := metav1.Status{}
 
 		if len(pod.Spec.Containers) == 0 {
-			return true, "passed validation"
+			return true, &responseStatus
 		}
 
-		invalidContainers := []validationResponse{}
-
+		var invalidContainers []string
 		for _, container := range pod.Spec.Containers {
 			if container.LivenessProbe == nil {
-				invalidContainer := validationResponse{
-					Container: container.Name,
-					Issue:     fmt.Sprintf("container %s failed validation due to missing Liveness Probe", container.Name),
-				}
-				invalidContainers = append(invalidContainers, invalidContainer)
+				message := fmt.Sprintf("container %s failed validation due to missing Liveness Probe", container.Name)
+				invalidContainers = append(invalidContainers, message)
 			}
 			if container.ReadinessProbe == nil {
-				invalidContainer := validationResponse{
-					Container: container.Name,
-					Issue:     fmt.Sprintf("container %s failed validation due to missing Readiness Probe", container.Name),
-				}
-				invalidContainers = append(invalidContainers, invalidContainer)
+				message := fmt.Sprintf("container %s failed validation due to missing Readiness Probe", container.Name)
+				invalidContainers = append(invalidContainers, message)
 			}
 		}
 
 		if len(invalidContainers) == 0 {
-			return true, "passed validation"
+			return true, &responseStatus
 		}
 
-		invalidContainerJson, err := json.Marshal(invalidContainers)
-		if err != nil {
-			klog.Errorf("Error occurred during marshalling: %s", err.Error())
-			return false, "failed validation due to json marshalling error"
-		}
-
-		return false, string(invalidContainerJson)
+		responseStatus.Message = strings.Join(invalidContainers, ", ")
+		responseStatus.Code = http.StatusForbidden
+		return false, &responseStatus
 	}
 	return applyPodValidation(ar, validate)
 }

@@ -43,7 +43,7 @@ func applyPodPatch(ar v1.AdmissionReview, shouldPatchPod func(*corev1.Pod) bool,
 	return &reviewResponse
 }
 
-func applyPodValidation(ar v1.AdmissionReview, validate func(*corev1.Pod) (bool, string)) *v1.AdmissionResponse {
+func applyPodValidation(ar v1.AdmissionReview, validate func(*corev1.Pod) (bool, *metav1.Status)) *v1.AdmissionResponse {
 	klog.V(2).Info("validating pods")
 	podResource := metav1.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
 	if ar.Request.Resource != podResource {
@@ -64,6 +64,6 @@ func applyPodValidation(ar v1.AdmissionReview, validate func(*corev1.Pod) (bool,
 	}
 
 	reviewResponse := v1.AdmissionResponse{}
-	reviewResponse.Allowed, reviewResponse.Result.Message = validate(&pod)
+	reviewResponse.Allowed, reviewResponse.Result = validate(&pod)
 	return &reviewResponse
 }
