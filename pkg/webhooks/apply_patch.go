@@ -48,6 +48,11 @@ func applyPodPatch(ar v1.AdmissionReview, shouldPatchPod func(*corev1.Pod) bool,
 	return &reviewResponse
 }
 
+/*
+ * This function was originally copied from the Kubernetes project (https://github.com/kubernetes/kubernetes)
+ * and is licensed under Apache License 2.0.
+ * Modifications have been made by the author of this project.
+ */
 func applyPodValidation(ar v1.AdmissionReview, validate func(*corev1.Pod) (bool, *metav1.Status)) *v1.AdmissionResponse {
 	klog.V(2).Info("validating pods")
 	podResource := metav1.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}

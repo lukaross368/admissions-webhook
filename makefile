@@ -38,6 +38,12 @@ run: build certs
 	  --tls-private-key-file=$(CERT_DIR)/tls.key.pem \
 	  --port=8443
 
+.PHONY: test
+test:
+	@echo "🧪 Running all unit tests for $(PROJECT_NAME)..."
+	@go test ./... -v -cover
+	@echo "✅ All tests passed!"
+
 .PHONY: clean
 clean:
 	@echo "🧹 Cleaning up binaries and certs..."
