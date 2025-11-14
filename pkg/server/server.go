@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -125,12 +126,21 @@ func runWebhook(cmd *cobra.Command, args []string) error {
 		KeyFile:  keyFile,
 	}
 
-	http.HandleFunc("/mutate-pods", serveMutatePods)
-	http.HandleFunc("/validate-pods", serveValidatePods)
+	muxWebhook := http.NewServeMux()
+	muxWebhook.HandleFunc("/mutate-pods", serveMutatePods)
+	muxWebhook.HandleFunc("/validate-pods", serveValidatePods)
+
+	go func() {
+		muxMetrics := http.NewServeMux()
+		muxMetrics.Handle("/metrics", promhttp.Handler())
+		http.ListenAndServe(":2112", muxMetrics)
+	}()
 
 	server := &http.Server{
 		Addr:      fmt.Sprintf(":%d", port),
 		TLSConfig: configTLS(config),
+		Handler:   muxWebhook,
 	}
+
 	return server.ListenAndServeTLS("", "")
 }
