@@ -16,11 +16,6 @@ import (
 var Scheme = runtime.NewScheme()
 var Codecs = serializer.NewCodecFactory(Scheme)
 
-/*
- * This function was originally copied from the Kubernetes project (https://github.com/kubernetes/kubernetes)
- * and is licensed under Apache License 2.0.
- * Modifications have been made by the author of this project.
- */
 func init() {
 	utilruntime.Must(corev1.AddToScheme(Scheme))
 	utilruntime.Must(admissionv1beta1.AddToScheme(Scheme))

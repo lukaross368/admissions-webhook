@@ -14,7 +14,6 @@ var (
 	codecs = serializer.NewCodecFactory(scheme)
 )
 
-// adapted from Kubernetes (Apache 2.0)
 // decodePodFromAdmissionReview handles common logic for decoding a Pod from an AdmissionReview
 func decodePodFromAdmissionReview(ar v1.AdmissionReview) (*corev1.Pod, *v1.AdmissionResponse) {
 	podResource := metav1.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
@@ -38,7 +37,6 @@ func decodePodFromAdmissionReview(ar v1.AdmissionReview) (*corev1.Pod, *v1.Admis
 	return pod, nil
 }
 
-// adapted from Kubernetes (Apache 2.0)
 // applyPodPatch mutates a pod if shouldPatchPod returns true
 func applyPodPatch(ar v1.AdmissionReview, shouldPatchPod func(*corev1.Pod) bool, patch string) *v1.AdmissionResponse {
 	klog.V(2).Info("mutating pods")
@@ -60,7 +58,6 @@ func applyPodPatch(ar v1.AdmissionReview, shouldPatchPod func(*corev1.Pod) bool,
 	return reviewResponse
 }
 
-// adapted from Kubernetes (Apache 2.0)
 // applyPodValidation validates a pod and returns an AdmissionResponse
 func applyPodValidation(ar v1.AdmissionReview, validate func(*corev1.Pod) (bool, *metav1.Status)) *v1.AdmissionResponse {
 	klog.V(2).Info("validating pods")

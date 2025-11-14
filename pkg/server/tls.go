@@ -11,10 +11,6 @@ type Config struct {
 	KeyFile  string
 }
 
-/*
- * This function was originally copied from the Kubernetes project (https://github.com/kubernetes/kubernetes)
- * and is licensed under Apache License 2.0.
- */
 func configTLS(config Config) *tls.Config {
 	sCert, err := tls.LoadX509KeyPair(config.CertFile, config.KeyFile)
 	if err != nil {

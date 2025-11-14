@@ -39,22 +39,12 @@ func Execute() {
 	}
 }
 
-/*
- * This function was originally copied from the Kubernetes project (https://github.com/kubernetes/kubernetes)
- * and is licensed under Apache License 2.0.
- * Modifications have been made by the author of this project.
- */
 func init() {
 	CmdWebhook.Flags().StringVar(&certFile, "tls-cert-file", "", "File containing the default x509 Certificate for HTTPS. (CA cert, if any, concatenated after server cert).")
 	CmdWebhook.Flags().StringVar(&keyFile, "tls-private-key-file", "", "File containing the default x509 private key matching --tls-cert-file.")
 	CmdWebhook.Flags().IntVar(&port, "port", 443, "Secure port that the webhook listens on")
 }
 
-/*
- * This function was originally copied from the Kubernetes project (https://github.com/kubernetes/kubernetes)
- * and is licensed under Apache License 2.0.
- * Modifications have been made by the author of this project.
- */
 func serve(w http.ResponseWriter, r *http.Request, admit admitHandler) {
 	var body []byte
 	if r.Body != nil {
@@ -115,30 +105,16 @@ func serve(w http.ResponseWriter, r *http.Request, admit admitHandler) {
 	}
 }
 
-/*
- * This function was originally copied from the Kubernetes project (https://github.com/kubernetes/kubernetes)
- * and is licensed under Apache License 2.0.
- */
 func newDelegateToV1AdmitHandler(f admitv1Func) admitHandler {
 	return admitHandler{
 		v1: f,
 	}
 }
 
-/*
- * This function was originally copied from the Kubernetes project (https://github.com/kubernetes/kubernetes)
- * and is licensed under Apache License 2.0.
- * Modifications have been made by the author of this project.
- */
 func serveValidatePods(w http.ResponseWriter, r *http.Request) {
 	serve(w, r, newDelegateToV1AdmitHandler(webhooks.ValidatePods))
 }
 
-/*
- * This function was originally copied from the Kubernetes project (https://github.com/kubernetes/kubernetes)
- * and is licensed under Apache License 2.0.
- * Modifications have been made by the author of this project.
- */
 func serveMutatePods(w http.ResponseWriter, r *http.Request) {
 	serve(w, r, newDelegateToV1AdmitHandler(webhooks.MutatePods))
 }
