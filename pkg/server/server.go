@@ -1,6 +1,8 @@
 package server
 
 import (
+	"time"
+
 	"github.com/lukaross368/admissions-webhook/pkg/webhooks"
 
 	"encoding/json"
@@ -8,6 +10,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/admission/v1"
@@ -46,7 +49,10 @@ func init() {
 	CmdWebhook.Flags().IntVar(&port, "port", 443, "Secure port that the webhook listens on")
 }
 
-func serve(w http.ResponseWriter, r *http.Request, admit admitHandler) {
+func serve(w http.ResponseWriter, r *http.Request, admit admitHandler, requestCounter *prometheus.CounterVec, requestTimer *prometheus.HistogramVec) {
+	statusCode := "200"
+	start := time.Now()
+
 	var body []byte
 	if r.Body != nil {
 
@@ -59,6 +65,9 @@ func serve(w http.ResponseWriter, r *http.Request, admit admitHandler) {
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "application/json" {
 		klog.Errorf("contentType=%s, expect application/json", contentType)
+		statusCode = "400"
+		requestCounter.WithLabelValues(statusCode, r.URL.Path, r.Method).Inc()
+		requestTimer.WithLabelValues(statusCode, r.URL.Path, r.Method).Observe(time.Since(start).Seconds())
 		return
 	}
 
@@ -70,6 +79,9 @@ func serve(w http.ResponseWriter, r *http.Request, admit admitHandler) {
 		msg := fmt.Sprintf("Request could not be decoded: %v", err)
 		klog.Error(msg)
 		http.Error(w, msg, http.StatusBadRequest)
+		statusCode = "400"
+		requestTimer.WithLabelValues(statusCode, r.URL.Path, r.Method).Observe(time.Since(start).Seconds())
+		requestCounter.WithLabelValues(statusCode, r.URL.Path, r.Method).Inc()
 		return
 	}
 
@@ -79,6 +91,9 @@ func serve(w http.ResponseWriter, r *http.Request, admit admitHandler) {
 		requestedAdmissionReview, ok := obj.(*v1.AdmissionReview)
 		if !ok {
 			klog.Errorf("Expected v1.AdmissionReview but got: %T", obj)
+			statusCode = "500"
+			requestCounter.WithLabelValues(statusCode, r.URL.Path, r.Method).Inc()
+			requestTimer.WithLabelValues(statusCode, r.URL.Path, r.Method).Observe(time.Since(start).Seconds())
 			return
 		}
 		responseAdmissionReview := &v1.AdmissionReview{}
@@ -90,6 +105,9 @@ func serve(w http.ResponseWriter, r *http.Request, admit admitHandler) {
 		msg := fmt.Sprintf("Unsupported group version kind: %v", gvk)
 		klog.Error(msg)
 		http.Error(w, msg, http.StatusBadRequest)
+		statusCode = "400"
+		requestTimer.WithLabelValues(statusCode, r.URL.Path, r.Method).Observe(time.Since(start).Seconds())
+		requestCounter.WithLabelValues(statusCode, r.URL.Path, r.Method).Inc()
 		return
 	}
 
@@ -98,12 +116,20 @@ func serve(w http.ResponseWriter, r *http.Request, admit admitHandler) {
 	if err != nil {
 		klog.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		statusCode = "500"
+		requestTimer.WithLabelValues(statusCode, r.URL.Path, r.Method).Observe(time.Since(start).Seconds())
+		requestCounter.WithLabelValues(statusCode, r.URL.Path, r.Method).Inc()
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := w.Write(respBytes); err != nil {
 		klog.Error(err)
+		statusCode = "500"
 	}
+
+	requestTimer.WithLabelValues(statusCode, r.URL.Path, r.Method).Observe(time.Since(start).Seconds())
+	requestCounter.WithLabelValues(statusCode, r.URL.Path, r.Method).Inc()
 }
 
 func newDelegateToV1AdmitHandler(f admitv1Func) admitHandler {
@@ -112,12 +138,42 @@ func newDelegateToV1AdmitHandler(f admitv1Func) admitHandler {
 	}
 }
 
+var mutationWebhookCounter = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "mutation_webhook_endpoint_total",
+		Help: "No of mutation webhook requests",
+	}, []string{"status", "path", "method"})
+
+var validationWebhookCounter = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "validation_webhook_endpoint_total",
+		Help: "No of validation webhook requests",
+	}, []string{"status", "path", "method"})
+
+var mutationWebhookLatency = prometheus.NewHistogramVec(
+	prometheus.HistogramOpts{
+		Name:    "mutation_webhook_request_duration_seconds",
+		Help:    "Duration of mutation webhook requests",
+		Buckets: prometheus.ExponentialBuckets(0.001, 2, 12),
+	},
+	[]string{"status", "path", "method"},
+)
+
+var validationWebhookLatency = prometheus.NewHistogramVec(
+	prometheus.HistogramOpts{
+		Name:    "validation_webhook_request_duration_seconds",
+		Help:    "Duration of validation webhook requests",
+		Buckets: prometheus.ExponentialBuckets(0.001, 2, 12),
+	},
+	[]string{"status", "path", "method"},
+)
+
 func serveValidatePods(w http.ResponseWriter, r *http.Request) {
-	serve(w, r, newDelegateToV1AdmitHandler(webhooks.ValidatePods))
+	serve(w, r, newDelegateToV1AdmitHandler(webhooks.ValidatePods), validationWebhookCounter, validationWebhookLatency)
 }
 
 func serveMutatePods(w http.ResponseWriter, r *http.Request) {
-	serve(w, r, newDelegateToV1AdmitHandler(webhooks.MutatePods))
+	serve(w, r, newDelegateToV1AdmitHandler(webhooks.MutatePods), mutationWebhookCounter, mutationWebhookLatency)
 }
 
 func runWebhook(cmd *cobra.Command, args []string) error {
@@ -132,7 +188,12 @@ func runWebhook(cmd *cobra.Command, args []string) error {
 
 	go func() {
 		muxMetrics := http.NewServeMux()
-		muxMetrics.Handle("/metrics", promhttp.Handler())
+		reg := prometheus.NewRegistry()
+		reg.MustRegister(mutationWebhookCounter, validationWebhookCounter, validationWebhookLatency, mutationWebhookLatency)
+		handler := promhttp.HandlerFor(
+			reg,
+			promhttp.HandlerOpts{})
+		muxMetrics.Handle("/metrics", handler)
 		http.ListenAndServe(":2112", muxMetrics)
 	}()
 
