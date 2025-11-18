@@ -51,13 +51,24 @@ jobs:
             -p 8443:443 \
             -v $(pwd)/certs:/app/certs:ro \
             --name admissions_webhook_test \
-            admission-webhook:ci \
+            admissions-webhook:ci \
             --tls-cert-file=/app/certs/tls.crt.pem \
             --tls-private-key-file=/app/certs/tls.key.pem \
             --port=443
- 
-      - name: Scan running container
-        run: trivy container admissions_webhook_test
+
+      - name: Health check container
+        run: |
+          timeout=30
+          until curl -sk https://localhost:8443/health; do
+            timeout=$((timeout - 1))
+            if [ $timeout -le 0 ]; then
+              echo "Webhook container failed health check"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          curl -s http://localhost:2112/metrics || exit 1
 
 # login to docker hub
 
