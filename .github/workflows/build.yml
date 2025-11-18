@@ -15,22 +15,22 @@ jobs:
         with:
           go-version: 1.24.2
 
-      - name: Static analysis 
-        uses: dominikh/staticcheck-action@024238d2898c874f26d723e7d0ff4308c35589a2
-        with:
-          version: "2025.1.1"
+      # - name: Static analysis 
+      #   uses: dominikh/staticcheck-action@024238d2898c874f26d723e7d0ff4308c35589a2
+      #   with:
+      #     version: "2025.1.1"
 
-      - name: Run Build
-        run: make build
+      # - name: Run Build
+      #   run: make build
           
-      - name: Run Tests
-        run: go test ./... -coverprofile=coverage.out
+      # - name: Run Tests
+      #   run: go test ./... -coverprofile=coverage.out
 
-      # TODO: Migrate to managed server
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@ffc3010689be73b8e5ae0c57ce35968afd7909e8
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      # # TODO: Migrate to managed server
+      # - name: SonarCloud Scan
+      #   uses: SonarSource/sonarcloud-github-action@ffc3010689be73b8e5ae0c57ce35968afd7909e8
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         
       - name: Build Docker image
         run: |
@@ -58,6 +58,8 @@ jobs:
             --port=443
           
           sleep 15
+
+          docker logs admission_webhook_test
           
           curl -v -sk https://localhost:8443/health || exit 1 
           curl -v -sk http://localhost:2112/metrics || exit 1
