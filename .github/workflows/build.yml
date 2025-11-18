@@ -1,0 +1,43 @@
+name: Integrate Webhook Server Source Code
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo Code
+        uses: actions/checkout@v2
+
+      - name: Set Up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.24.2
+          
+      - name: Run tests
+        run: make test
+
+# IN ANY CASE:
+
+# run build 
+
+# run tests
+
+# run static code analysis
+
+# run security checks
+
+# IF BUILD REASON WAS MERGE TARGETING MAIN: 
+
+# build docker image 
+
+# run security tests on built image
+
+# run container
+
+# test container 
+
+# login to docker hub
+
+# push image to dockerhub
