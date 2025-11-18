@@ -1,0 +1,56 @@
+name: CD - Admission Webhook
+on: 
+  push:
+    branches:
+      - main
+jobs:
+  cd-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo Code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 
+
+      - name: Set Up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.24.2
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GORELEASER_CURRENT_TAG: ${{ github.ref_name }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
+
+      - name: Docker Login
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          
+      - name: Extract GoReleaser Tag (for Docker)
+        id: extract_tag
+        run: echo "TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
+        with:
+          context: .
+          push: true
+          tags: |
+            lukaross368/admissions-webhook:${{ steps.extract_tag.outputs.TAG }}
+            lukaross368/admissions-webhook:latest
+          file: Dockerfile
+
+      - name: Verify Pull Image
+        run: |
+          docker pull lukaross368/admissions-webhook:${{ steps.extract_tag.outputs.TAG }}
+          docker pull lukaross368/admissions-webhook:latest
