@@ -49,6 +49,7 @@ jobs:
         run: |
           docker run -d --rm \
             -p 8443:443 \
+            -p 2112:2112 \
             -v $(pwd)/certs:/app/certs:ro \
             --name admission_webhook_test \
             admission-webhook:ci \
@@ -58,8 +59,8 @@ jobs:
           
           sleep 15
           
-          curl -sk https://localhost:8443/health || exit 1 
-          curl -sk http://localhost:2112/metrics || exit 1
+          curl -v -sk https://localhost:8443/health || exit 1 
+          curl -v -sk http://localhost:2112/metrics || exit 1
 
 # login to docker hub
 
