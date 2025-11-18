@@ -43,7 +43,9 @@ jobs:
       #     format: table
 
       - name: Generate TLS certs
-        run: make certs
+        run: |
+         make certs
+         chmod 644 certs/tls.key.pem certs/tls.crt.pem
       
       - name: Run and health check container
         run: |
