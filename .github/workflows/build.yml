@@ -24,22 +24,17 @@ jobs:
         run: make build
           
       - name: Run Tests
-        run: go test ./... -coverprofile=coverage.out
+        run: go test ./...
 
       # TODO: Migrate to managed server
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@ffc3010689be73b8e5ae0c57ce35968afd7909e8
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          sonar.go.coverage.reportPaths: coverage.out
         
-# IN ANY CASE:
-
-# run build 
-
-# run tests
-
-# run static code analysis
+      - name: Build Docker image
+        run: |
+          docker build -t admission-webhook:latest .
 
 # run security checks
 
