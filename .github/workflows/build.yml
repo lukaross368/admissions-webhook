@@ -36,6 +36,12 @@ jobs:
         run: |
           docker build -t admission-webhook:latest .
 
+      - name: Scan Docker image for vulnerabilities
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8
+        with:
+          image-ref: admission-webhook:latest
+          format: table
+
 # run security checks
 
 # IF BUILD REASON WAS MERGE TARGETING MAIN: 
