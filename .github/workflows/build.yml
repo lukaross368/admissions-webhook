@@ -63,12 +63,14 @@ jobs:
             timeout=$((timeout - 1))
             if [ $timeout -le 0 ]; then
               echo "Webhook container failed health check"
+              docker logs admission_webhook_test
               exit 1
             fi
             sleep 1
           done
 
-          curl -s http://localhost:2112/metrics || exit 1
+          curl -sk https://localhost:2112/metrics || exit 1
+
 
 # login to docker hub
 
