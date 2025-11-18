@@ -176,6 +176,11 @@ func serveMutatePods(w http.ResponseWriter, r *http.Request) {
 	serve(w, r, newDelegateToV1AdmitHandler(webhooks.MutatePods), mutationWebhookCounter, mutationWebhookLatency)
 }
 
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+    w.WriteHeader(http.StatusOK)
+    fmt.Fprintln(w, "OK")
+}
+
 func runWebhook(cmd *cobra.Command, args []string) error {
 	config := Config{
 		CertFile: certFile,
@@ -183,6 +188,7 @@ func runWebhook(cmd *cobra.Command, args []string) error {
 	}
 
 	muxWebhook := http.NewServeMux()
+	muxWebhook.HandleFunc("/health", healthHandler)
 	muxWebhook.HandleFunc("/mutate-pods", serveMutatePods)
 	muxWebhook.HandleFunc("/validate-pods", serveValidatePods)
 
