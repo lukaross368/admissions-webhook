@@ -26,6 +26,7 @@ jobs:
           MAJOR=$(echo $VERSION_NUM | awk -F. '{print $1}')
           MINOR=$(echo $VERSION_NUM | awk -F. '{print $2}')
           
+          # Increment minor version and reset patch to 0
           NEW_MINOR=$((MINOR + 1))
           NEW_TAG="v$MAJOR.$NEW_MINOR.0"
           
@@ -36,31 +37,30 @@ jobs:
             --title "$NEW_TAG Release" \
             --generate-notes \
             --target "$GITHUB_SHA"
+            
+          # CRITICAL FIX: Export the new tag for subsequent steps
+          echo "TAG=$NEW_TAG" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
+        uses: docker/setup-buildx-action@v3
 
       - name: Docker Login
-        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           
-      - name: Extract GoReleaser Tag (for Docker)
-        id: extract_tag
-        run: echo "TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
-
       - name: Build and Push Docker Image
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: |
-            lukaross368/admissions-webhook:${{ steps.extract_tag.outputs.TAG }}
+            lukaross368/admissions-webhook:${{ steps.create_release.outputs.TAG }}
             lukaross368/admissions-webhook:latest
           file: Dockerfile
 
       - name: Verify Pull Image
         run: |
-          docker pull lukaross368/admissions-webhook:${{ steps.extract_tag.outputs.TAG }}
+          docker pull lukaross368/admissions-webhook:${{ steps.create_release.outputs.TAG }}
           docker pull lukaross368/admissions-webhook:latest
