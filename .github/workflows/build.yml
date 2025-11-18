@@ -1,9 +1,5 @@
 name: Integrate Webhook Server Source Code
 on:
-  # temp for development
-  push:
-    branches:
-      - feature/ci
   pull_request:
     branches:
       - main
@@ -27,8 +23,17 @@ jobs:
       - name: Run Build
         run: make build
           
-      - name: Run tests
-        run: make test
+      - name: Run Tests
+        run: go test ./... -coverprofile=coverage.out
+
+      # TODO: Migrate to managed server
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_ORG: ${{ secrets.SONAR_ORG }}
+          SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
 # IN ANY CASE:
 
