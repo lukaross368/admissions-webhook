@@ -6,6 +6,9 @@ on:
 jobs:
   cd-release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     steps:
       - name: Checkout Repo Code
         uses: actions/checkout@v2
