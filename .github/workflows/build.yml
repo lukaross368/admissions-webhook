@@ -45,7 +45,7 @@ jobs:
       - name: Generate TLS certs
         run: make certs
       
-      - name: Run container
+      - name: Run and health check container
         run: |
           docker run -d --rm \
             -p 8443:443 \
@@ -55,22 +55,11 @@ jobs:
             --tls-cert-file=/app/certs/tls.crt.pem \
             --tls-private-key-file=/app/certs/tls.key.pem \
             --port=443
-
-      - name: Health check container
-        run: |
-          timeout=30
-          until curl -sk https://localhost:8443/health; do
-            timeout=$((timeout - 1))
-            if [ $timeout -le 0 ]; then
-              echo "Webhook container failed health check"
-              docker logs admission_webhook_test
-              exit 1
-            fi
-            sleep 1
-          done
-
-          curl -sk https://localhost:2112/metrics || exit 1
-
+          
+          sleep 15
+          
+          curl -sk https://localhost:8443/health || exit 1 
+          curl -sk http://localhost:2112/metrics || exit 1
 
 # login to docker hub
 
