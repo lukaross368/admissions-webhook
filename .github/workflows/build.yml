@@ -34,6 +34,7 @@ jobs:
           SONAR_ORG: ${{ secrets.SONAR_ORG }}
           SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          sonar.go.coverage.reportPaths: coverage.out
         
 # IN ANY CASE:
 
