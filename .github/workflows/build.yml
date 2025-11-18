@@ -51,7 +51,7 @@ jobs:
             -p 8443:443 \
             -v $(pwd)/certs:/app/certs:ro \
             --name admissions_webhook_test \
-            admissions-webhook:ci \
+            admission-webhook:ci \
             --tls-cert-file=/app/certs/tls.crt.pem \
             --tls-private-key-file=/app/certs/tls.key.pem \
             --port=443
