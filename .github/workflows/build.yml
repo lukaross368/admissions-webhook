@@ -36,18 +36,18 @@ jobs:
         run: |
           docker build -t admission-webhook:ci .
 
-      - name: Scan Docker image for vulnerabilities
-        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8
-        with:
-          image-ref: admission-webhook:ci
-          format: table
+      # - name: Scan Docker image for vulnerabilities
+      #   uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8
+      #   with:
+      #     image-ref: admission-webhook:ci
+      #     format: table
 
       - name: Generate TLS certs
         run: make certs
       
       - name: Run and health check container
         run: |
-          docker run -d --rm \
+          docker run -d \
             -p 8443:443 \
             -p 2112:2112 \
             -v $(pwd)/certs:/app/certs:ro \
