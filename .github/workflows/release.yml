@@ -56,11 +56,11 @@ jobs:
           context: .
           push: true
           tags: |
-            lukaross368/admissions-webhook:${{ steps.create_release.outputs.TAG }}
-            lukaross368/admissions-webhook:latest
+            lukaross123/admissions-webhook:${{ steps.create_release.outputs.TAG }}
+            lukaross123/admissions-webhook:latest
           file: Dockerfile
 
       - name: Verify Pull Image
         run: |
-          docker pull lukaross368/admissions-webhook:${{ steps.create_release.outputs.TAG }}
-          docker pull lukaross368/admissions-webhook:latest
+          docker pull lukaross123/admissions-webhook:${{ steps.create_release.outputs.TAG }}
+          docker pull lukaross123/admissions-webhook:latest
