@@ -1,5 +1,9 @@
 name: Integrate Webhook Server Source Code
 on:
+  # temp for development
+  push:
+    branches:
+      - feature/ci
   pull_request:
     branches:
       - main
