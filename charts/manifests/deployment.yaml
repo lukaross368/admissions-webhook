@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: admissions-webhook
+  name: webhook-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webhook
+  template:
+    metadata:
+      labels:
+        app: webhook
+    spec:
+      containers:
+        - name: webhook
+          command: ["/app/webhook-server"]
+          args:
+            - "--tls-cert-file=/tls/tls.crt"
+            - "--tls-private-key-file=/tls/tls.key"
+            - "--port=8443"
+          image: lukaross123/admissions-webhook:v0.4.0
+          ports:
+            - name: webhook
+              containerPort: 8443
+            - name: metrics
+              containerPort: 2112
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+          volumeMounts:
+            - name: tls
+              mountPath: /tls
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8443
+              scheme: HTTPS
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8443
+              scheme: HTTPS
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: tls
+          secret:
+            secretName: webhook-tls

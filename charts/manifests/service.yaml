@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook
+  namespace: admissions-webhook
+spec:
+  type: ClusterIP
+  ports:
+    - name: webhook
+      port: 443
+      targetPort: 8443
+  selector:
+    app: webhook
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook-metrics
+  namespace: admissions-webhook
+  labels:
+    app: webhook
+spec:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: 2112
+      targetPort: 2112
+  selector:
+    app: webhook

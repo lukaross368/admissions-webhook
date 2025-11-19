@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: webhook-metrics
+  namespace: admissions-webhook
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: webhook
+  namespaceSelector:
+    matchNames:
+      - admissions-webhook
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
