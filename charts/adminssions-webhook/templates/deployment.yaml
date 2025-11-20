@@ -1,35 +1,36 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: admissions-webhook
-  name: webhook-deployment
+  name: {{ include "admissions-webhook.fullname" . }}
+  namespace: {{ .Release.Namespace }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.webhookServer.replicas }}
   selector:
     matchLabels:
-      app: webhook
+      app: {{ include "admissions-webhook.fullname" . }}
   template:
     metadata:
       labels:
-        app: webhook
+        app: {{ include "admissions-webhook.fullname" . }}
     spec:
       containers:
         - name: webhook
+          image: "{{ .Values.webhookServer.image.repository }}:{{ .Values.webhookServer.image.tag }}"
+          imagePullPolicy: {{ .Values.webhookServer.image.pullPolicy }}
           command: ["/app/webhook-server"]
           args:
             - "--tls-cert-file=/tls/tls.crt"
             - "--tls-private-key-file=/tls/tls.key"
-            - "--port=8443"
-          image: lukaross123/admissions-webhook:v0.4.0
+            - "--port={{ .Values.webhookServer.port }}"
           ports:
             - name: webhook
-              containerPort: 8443
+              containerPort: {{ .Values.webhookServer.port }}
             - name: metrics
-              containerPort: 2112
+              containerPort: {{ .Values.webhookServer.metricsPort }}
           resources:
             requests:
-              cpu: "50m"
-              memory: "64Mi"
+              cpu: {{ .Values.webhookServer.resources.cpu }}
+              memory: {{ .Values.webhookServer.resources.memory }}
           volumeMounts:
             - name: tls
               mountPath: /tls
@@ -37,18 +38,18 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: 8443
+              port: {{ .Values.webhookServer.port }}
               scheme: HTTPS
             initialDelaySeconds: 5
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /health
-              port: 8443
+              port: {{ .Values.webhookServer.port }}
               scheme: HTTPS
             initialDelaySeconds: 5
             periodSeconds: 10
       volumes:
         - name: tls
           secret:
-            secretName: webhook-tls
+            secretName: {{ include "admissions-webhook.fullname" . }}-tls
