@@ -1,0 +1,21 @@
+{{- if .Values.prometheus.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "admissions-webhook.fullname" . }}-metrics
+  namespace: {{ .Release.Namespace }}
+  labels:
+    release: {{ .Values.prometheus.releaseName }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "admissions-webhook.fullname" . }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: {{ .Values.webhookServer.metricsScrapeInterval | default "15s" }}
+      scrapeTimeout: {{ .Values.webhookServer.metricsScrapeTimeout | default "10s" }}
+{{- end }}

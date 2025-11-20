@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "admissions-webhook.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.webhookServer.replicas }}
+  selector:
+    matchLabels:
+      app: {{ include "admissions-webhook.fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "admissions-webhook.fullname" . }}
+    spec:
+      containers:
+        - name: webhook
+          image: "{{ .Values.webhookServer.image.repository }}:{{ .Values.webhookServer.image.tag }}"
+          imagePullPolicy: {{ .Values.webhookServer.image.pullPolicy }}
+          command: ["/app/webhook-server"]
+          args:
+            - "--tls-cert-file=/tls/tls.crt"
+            - "--tls-private-key-file=/tls/tls.key"
+            - "--port={{ .Values.webhookServer.port }}"
+          ports:
+            - name: webhook
+              containerPort: {{ .Values.webhookServer.port }}
+            - name: metrics
+              containerPort: {{ .Values.webhookServer.metricsPort }}
+          resources:
+            requests:
+              cpu: {{ .Values.webhookServer.resources.cpu }}
+              memory: {{ .Values.webhookServer.resources.memory }}
+          volumeMounts:
+            - name: tls
+              mountPath: /tls
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.webhookServer.port }}
+              scheme: HTTPS
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.webhookServer.port }}
+              scheme: HTTPS
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: tls
+          secret:
+            secretName: {{ include "admissions-webhook.fullname" . }}-tls

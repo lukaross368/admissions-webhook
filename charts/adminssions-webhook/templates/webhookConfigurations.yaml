@@ -1,0 +1,59 @@
+{{- $fullName := include "admissions-webhook.fullname" . -}}
+
+{{- if .Values.webhookServer.mutatingRules }}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: {{ $fullName }}-mutate
+webhooks:
+  - name: mutate.{{ $fullName }}.svc
+    clientConfig:
+      service:
+        name: {{ $fullName }}
+        namespace: {{ .Release.Namespace }}
+        path: /mutate-pods
+        port: 443
+      caBundle: {{ .Values.tls.crt }}
+    rules:
+{{- range .Values.webhookServer.mutatingRules }}
+      - operations: {{ .operations | toYaml | nindent 8 }}
+        apiGroups: {{ .apiGroups | toYaml | nindent 8 }}
+        apiVersions: {{ .apiVersions | toYaml | nindent 8 }}
+        resources: {{ .resources | toYaml | nindent 8 }}
+        scope: {{ .scope }}
+{{- end }}
+    admissionReviewVersions: ["v1"]
+    sideEffects: None
+    timeoutSeconds: 10
+    failurePolicy: Fail
+{{- end }}
+
+{{- if .Values.webhookServer.validatingRules }}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: {{ $fullName }}-validate
+webhooks:
+  - name: validate.{{ $fullName }}.svc
+    clientConfig:
+      service:
+        name: {{ $fullName }}
+        namespace: {{ .Release.Namespace }}
+        path: /validate-pods
+        port: 443
+      caBundle: {{ .Values.tls.crt }}
+    rules:
+{{- range .Values.webhookServer.validatingRules }}
+      - operations: {{ .operations | toYaml | nindent 8 }}
+        apiGroups: {{ .apiGroups | toYaml | nindent 8 }}
+        apiVersions: {{ .apiVersions | toYaml | nindent 8 }}
+        resources: {{ .resources | toYaml | nindent 8 }}
+        scope: {{ .scope }}
+{{- end }}
+    admissionReviewVersions: ["v1"]
+    sideEffects: None
+    timeoutSeconds: 10
+    failurePolicy: Fail
+{{- end }}

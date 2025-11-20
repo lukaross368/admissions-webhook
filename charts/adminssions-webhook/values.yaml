@@ -1,0 +1,51 @@
+# TLS cert config
+tls:
+  key:
+  crt:
+
+# Webhook server config
+webhookServer:
+  replicas: 1
+  port: 8443
+  metricsPort: 2112
+  # Optionally set metric scraping settings
+  # metricsScrapeInterval: 15s
+  # metricsScrapeTimeout: 10s
+  image:
+    repository: lukaross123/admissions-webhook
+    tag: v0.4.0
+    pullPolicy: IfNotPresent
+  resources:
+    cpu: "50m"
+    memory: "64Mi"
+
+  mutatingRules:
+    - operations: ["CREATE", "UPDATE"]
+      apiGroups: [""]
+      apiVersions: ["v1"]
+      resources: ["pods"]
+      scope: Namespaced
+
+  validatingRules:
+    - operations: ["CREATE", "UPDATE"]
+      apiGroups: [""]
+      apiVersions: ["v1"]
+      resources: ["pods"]
+      scope: Namespaced
+
+# Prometheus dependency
+prometheus:
+  enabled: true
+  releaseName: prometheus
+
+# Dashboard config
+grafana:
+  enabled: true
+  metrics:
+    validation:
+      base: validation_webhook_request_duration_seconds
+      requests: validation_webhook_endpoint_total
+    mutation:
+      base: mutation_webhook_request_duration_seconds
+      requests: mutation_webhook_endpoint_total
+

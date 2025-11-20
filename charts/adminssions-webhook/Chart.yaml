@@ -1,0 +1,8 @@
+apiVersion: v2
+name: admissions-webhook
+description: A validating and mutating admission webhook with Prometheus metrics and Grafana dashboards
+type: application
+
+version: 0.1.0
+
+appVersion: 0.4.0

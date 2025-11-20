@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mutation-positive
+  namespace: default
+  labels:
+    environment: "test"
+spec:
+  restartPolicy: "Never"
+  containers:
+    - name: busybox
+      image: busybox
+      command: ["sleep", "3600"]
+      livenessProbe:
+        exec:
+          command: ["echo"]
+        initialDelaySeconds: 1
+        periodSeconds: 10
+      readinessProbe:
+        exec:
+          command: ["echo"]
+        initialDelaySeconds: 1
+        periodSeconds: 10
