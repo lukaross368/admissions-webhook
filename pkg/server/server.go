@@ -1,15 +1,13 @@
 package server
 
 import (
-	"time"
-
-	"github.com/lukaross368/admissions-webhook/pkg/webhooks"
-
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
+	"github.com/lukaross368/admissions-webhook/pkg/webhooks"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
@@ -177,8 +175,8 @@ func serveMutatePods(w http.ResponseWriter, r *http.Request) {
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
-    w.WriteHeader(http.StatusOK)
-    fmt.Fprintln(w, "OK")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintln(w, "OK")
 }
 
 func runWebhook(cmd *cobra.Command, args []string) error {
@@ -200,7 +198,9 @@ func runWebhook(cmd *cobra.Command, args []string) error {
 			reg,
 			promhttp.HandlerOpts{})
 		muxMetrics.Handle("/metrics", handler)
-		http.ListenAndServe(":2112", muxMetrics)
+		if err := http.ListenAndServe(":2112", muxMetrics); err != nil {
+			klog.Errorf("metrics server exited: %v", err)
+		}
 	}()
 
 	server := &http.Server{

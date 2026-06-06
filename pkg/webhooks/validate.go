@@ -10,7 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// validate pods function. contains logic for how to validate pods
 func ValidatePods(ar v1.AdmissionReview) *v1.AdmissionResponse {
 
 	validate := func(pod *corev1.Pod) (bool, *metav1.Status) {

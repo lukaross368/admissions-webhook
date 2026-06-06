@@ -76,7 +76,7 @@ func TestValidatePods(t *testing.T) {
 			expectAllowed:  true,
 		},
 		{
-			name: "multi_container_pod_partial_probes_fail",
+			name: "multi-container pod partial probes fail",
 			podJSON: `{
 				"metadata": {
 					"name": "multi-container-pod",
@@ -118,7 +118,7 @@ func TestValidatePods(t *testing.T) {
 					]
 				}
 			}`,
-			expectedStatus: 403,
+			expectedStatus: http.StatusForbidden,
 			expectAllowed:  false,
 		},
 		{
@@ -140,7 +140,7 @@ func TestValidatePods(t *testing.T) {
 					"containers":[{"name":"nginx","image":"nginx:latest","livenessProbe":{"httpGet":{"path":"/","port":80}},"readinessProbe":{"httpGet":{"path":"/","port":80}}}]
 				}
 			}`,
-			expectedStatus: 200,
+			expectedStatus: http.StatusOK,
 			expectAllowed:  true,
 		},
 	}

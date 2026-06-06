@@ -7,15 +7,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// mutate pods function. contains logic for how to mutate pods
 func MutatePods(ar v1.AdmissionReview) *v1.AdmissionResponse {
-
-	// pod mutation patch
 	const podRestartPolicyPatch = `[
 		 {"op": "replace", "path": "/spec/restartPolicy", "value": "Always"}
 	]`
 
-	// mutation patch condition function
 	shouldPatchPod := func(pod *corev1.Pod) bool {
 
 		owners := pod.ObjectMeta.OwnerReferences

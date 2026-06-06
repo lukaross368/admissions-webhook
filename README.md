@@ -18,7 +18,7 @@ This repository contains:
 
 - Processes Kubernetes `AdmissionReview` requests by exposing `/mutate-pods` and `/validate-pods` https webhook endpoints
 - Performs validation. Webhook will pass validation if each container in the pod contains a liveness and readiness probe.
-- Performs mutations. If the pod has `restartPolicy == "Never"` this is mutated to be `restartPolicy == "Always"`. 
+- Performs mutations. If the pod has `restartPolicy == "Never"` this is mutated to be `restartPolicy == "Always"`.
 - Logs and returns structured responses back to the API server (Inspiration taken from a webhook server under the /tests directory of the [kubernetes source code](https://github.com/kubernetes/kubernetes/blob/release-1.21/test/images/agnhost/webhook)).
 - Exposes count and latency Prometheus metrics for each webhook via a std metrics endpoint accepting traffic on port 2112
 
@@ -30,11 +30,11 @@ See these files for the exact mutation and validation logic [mutate.go](https://
 
 ### What Is an Admission Webhook?
 
-Kubernetes uses [*admission controllers*](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/) to intercept API requests before they are persisted in the cluster. These controllers can either **validate** (accept or reject) or **mutate** (modify) requests.  
+Kubernetes uses [*admission controllers*](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/) to intercept API requests before they are persisted in the cluster. These controllers can either **validate** (accept or reject) or **mutate** (modify) requests.
 
 The API component of this project acts as a dynamic extension of this system: A [dynamic admissions webhook](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/) runs as a separate service and is hooked into Kubernetes to enforce custom logic.
 
-![Admission Controllers Diagram](./docs/admission-control-phases.jpg)  
+![Admission Controllers Diagram](./docs/admission-control-phases.jpg)
 *Figure: API request flow through Kubernetes admission controllers (source: [Kubernetes Docs](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/))*
 
 
@@ -112,7 +112,7 @@ curl --cacert ./certs/tls.crt.pem \
   }'
 
 ```
-And we should see the response 
+And we should see the response
 
 ```
 {
@@ -229,7 +229,7 @@ curl --cacert ./certs/tls.crt.pem \
 **Decode the patch**
 
 ```
-echo WwoJCSB7Im9wIjogInJlcGxhY2UiLCAicGF0aCI6ICIvc3BlYy9yZXN0YXJ0UG9saWN5IiwgInZhbHVlIjogIkFsd2F5cyJ9Cgld | base64 -d 
+echo WwoJCSB7Im9wIjogInJlcGxhY2UiLCAicGF0aCI6ICIvc3BlYy9yZXN0YXJ0UG9saWN5IiwgInZhbHVlIjogIkFsd2F5cyJ9Cgld | base64 -d
 ```
 **Which gives**
 ```
@@ -249,20 +249,12 @@ For instructions on how to deploy the webhook server in a cluster see the [Helm 
 
 ---
 
-## What I learned / Improvements
+## Known Limitations
 
-### What I Learned
-- The lifecycle of an admission request
-- How to build a secure webhook server with TLS
-- How Kubernetes validates and mutates resources
-- Packaging and deploying workloads with Helm
-
-### What I kept simple / could be improved 
-- Certificate setup should be dynamic and/or used central CA signed instead of self signed.
-- Minimal validation and mutation logic
-- Improved logging
-- Error handling paths that could be more robust
-- Full test coverage
-- Full Helm chart test coverage
+- **TLS**: Self-signed certificates are generated locally for development. Production deployments should use a certificate authority (e.g. [cert-manager](https://cert-manager.io/)) for automated provisioning and rotation.
+- **Webhook logic**: Validation and mutation rules are intentionally minimal. Real-world scenarios would require more expressive policy evaluation.
+- **Error handling**: Some error paths return minimal context; structured error responses would improve debuggability in production.
+- **Test coverage**: Unit tests cover the core webhook logic. Integration tests against a live cluster and full Helm chart test coverage are not yet implemented.
+- **Logging**: Logging is basic. Structured logging with configurable verbosity would be more useful in a production environment.
 
 ---
