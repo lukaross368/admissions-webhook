@@ -15,14 +15,14 @@ jobs:
         with:
           go-version: 1.24.2
 
-      - name: Static analysis 
-        uses: dominikh/staticcheck-action@024238d2898c874f26d723e7d0ff4308c35589a2
-        with:
-          version: "2025.1.1"
+      - name: Static analysis
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@2025.1.1
+          staticcheck ./...
 
       - name: Run Build
         run: make build
-          
+
       - name: Run Tests
         run: go test ./... -coverprofile=coverage.out
 
@@ -31,7 +31,7 @@ jobs:
         uses: SonarSource/sonarcloud-github-action@ffc3010689be73b8e5ae0c57ce35968afd7909e8
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        
+
       - name: Build Docker image
         run: |
           docker build -t admission-webhook:ci .
@@ -46,7 +46,7 @@ jobs:
         run: |
          make certs
          chmod 644 certs/tls.key.pem certs/tls.crt.pem
-      
+
       - name: Run and health check container
         run: |
           docker run -d \
@@ -58,8 +58,8 @@ jobs:
             --tls-cert-file=/app/certs/tls.crt.pem \
             --tls-private-key-file=/app/certs/tls.key.pem \
             --port=443
-          
+
           sleep 15
-          
-          curl -v -sk https://localhost:8443/health || exit 1 
+
+          curl -v -sk https://localhost:8443/health || exit 1
           curl -v -sk http://localhost:2112/metrics || exit 1
