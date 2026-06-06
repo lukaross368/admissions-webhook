@@ -6,6 +6,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/klog/v2"
 )
 
@@ -13,6 +14,10 @@ var (
 	scheme = runtime.NewScheme()
 	codecs = serializer.NewCodecFactory(scheme)
 )
+
+func init() {
+	utilruntime.Must(corev1.AddToScheme(scheme))
+}
 
 // decodePodFromAdmissionReview handles common logic for decoding a Pod from an AdmissionReview
 func decodePodFromAdmissionReview(ar v1.AdmissionReview) (*corev1.Pod, *v1.AdmissionResponse) {
